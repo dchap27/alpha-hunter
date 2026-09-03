@@ -98,7 +98,9 @@ export function normalizeHeliusAsset(value: unknown): HeliusTokenData | null {
     assetInterface: asString(value.interface),
     tokenProgram: tokenInfo ? asString(tokenInfo.token_program) : null,
     mintAuthority: tokenInfo ? asString(tokenInfo.mint_authority) : null,
+    mintAuthorityKnown: tokenInfo ? "mint_authority" in tokenInfo : false,
     freezeAuthority: tokenInfo ? asString(tokenInfo.freeze_authority) : null,
+    freezeAuthorityKnown: tokenInfo ? "freeze_authority" in tokenInfo : false,
   };
 }
 
@@ -150,6 +152,7 @@ export class HeliusService {
       clearTimeout(timeout);
     }
 
+    // getAsset normally uses HTTP 200 with result: null for a missing asset; this is a defensive fallback.
     if (response.status === 404) {
       return {
         ok: false,
@@ -189,20 +192,20 @@ export class HeliusService {
       };
     }
 
+    if (isRecord(body.error)) {
+      return {
+        ok: false,
+        reason: "api_error",
+        detail: "Helius returned an API error.",
+        statusCode: null,
+      };
+    }
+
     if (body.result === null) {
       return {
         ok: false,
         reason: "not_found",
         detail: "Helius has no asset data for this token.",
-        statusCode: null,
-      };
-    }
-
-    if (isRecord(body.error)) {
-      return {
-        ok: false,
-        reason: "http_error",
-        detail: "Helius returned an API error.",
         statusCode: null,
       };
     }

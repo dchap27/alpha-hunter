@@ -52,7 +52,9 @@ test("normalizes a successful Helius getAsset response", async () => {
       assetInterface: "FungibleToken",
       tokenProgram: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
       mintAuthority: "mint-authority",
+      mintAuthorityKnown: true,
       freezeAuthority: "freeze-authority",
+      freezeAuthorityKnown: true,
     },
   });
   assert.equal(request?.method, "POST");
@@ -101,6 +103,48 @@ test("returns a typed HTTP error", async () => {
     detail: "Helius API request failed with HTTP 500.",
     statusCode: 500,
   });
+});
+
+test("returns a typed API error for a JSON-RPC error response", async () => {
+  const service = new HeliusService(
+    async () =>
+      new Response(
+        JSON.stringify({ jsonrpc: "2.0", error: { code: -32602, message: "Invalid params" } }),
+        { status: 200 },
+      ),
+    apiKey,
+  );
+
+  assert.deepEqual(await service.getTokenOnchainData(tokenAddress), {
+    ok: false,
+    reason: "api_error",
+    detail: "Helius returned an API error.",
+    statusCode: null,
+  });
+});
+
+test("marks absent mint and freeze authority fields as unknown", async () => {
+  const service = new HeliusService(
+    async () =>
+      new Response(
+        JSON.stringify({
+          jsonrpc: "2.0",
+          result: {
+            id: tokenAddress,
+            token_info: { decimals: 6, supply: 1_000_000 },
+          },
+        }),
+        { status: 200 },
+      ),
+    apiKey,
+  );
+
+  const result = await service.getTokenOnchainData(tokenAddress);
+  assert.ok(result.ok);
+  assert.equal(result.data.mintAuthority, null);
+  assert.equal(result.data.mintAuthorityKnown, false);
+  assert.equal(result.data.freezeAuthority, null);
+  assert.equal(result.data.freezeAuthorityKnown, false);
 });
 
 test("returns a typed malformed-response error", async () => {

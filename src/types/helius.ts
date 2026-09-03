@@ -24,7 +24,9 @@ export interface HeliusTokenData extends Record<string, unknown> {
   assetInterface: string | null;
   tokenProgram: string | null;
   mintAuthority: string | null;
+  mintAuthorityKnown: boolean;
   freezeAuthority: string | null;
+  freezeAuthorityKnown: boolean;
 }
 
 export type HeliusServiceResult =
@@ -35,6 +37,7 @@ export type HeliusServiceResult =
         | "configuration_error"
         | "not_found"
         | "http_error"
+        | "api_error"
         | "malformed_response"
         | "network_error";
       detail: string;
