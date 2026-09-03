@@ -6,6 +6,7 @@ import { getHealth } from "./mcp/health.js";
 import { registerAnalyzeTokenTool } from "./mcp/analyze-token.js";
 import { registerTokenMarketDataTool } from "./mcp/token-market-data.js";
 import { registerTokenOnchainDataTool } from "./mcp/token-onchain-data.js";
+import { registerTokenHoldersTool } from "./mcp/token-holders.js";
 import { DexScreenerService } from "./services/dexscreener.js";
 
 export function createServer(
@@ -32,6 +33,7 @@ export function createServer(
   registerTokenMarketDataTool(server, dexScreenerService);
   registerAnalyzeTokenTool(server, dexScreenerService);
   registerTokenOnchainDataTool(server);
+  registerTokenHoldersTool(server);
 
   return server;
 }

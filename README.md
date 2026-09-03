@@ -28,12 +28,15 @@ To use the Helius-backed tool, provide `HELIUS_API_KEY` in the process environme
 | `get_token_market_data` | `tokenAddress: string` | Retrieves a normalized Solana market snapshot from DexScreener. |
 | `analyze_token` | `tokenAddress: string` | Produces deterministic ratios, data-quality details, and factual market-data observations. |
 | `get_token_onchain_data` | `tokenAddress: string` | Retrieves normalized factual Solana asset identity, metadata, mint, and authority data from Helius. |
+| `get_token_holders` | `tokenAddress: string`, optional `limit` | Retrieves factual token-account balances from Helius. |
 
 `get_token_market_data` uses DexScreener's public `token-pairs/v1/solana/{tokenAddress}` endpoint. Requests time out after approximately 8 seconds. When multiple Solana pairs are returned, Alpha Hunter selects the pair with the highest USD liquidity; ties keep DexScreener's response order. The tool reports factual market data only and does not assess token safety or investment quality.
 
 `analyze_token` uses the same normalized DexScreener data and does not call an AI model or another provider. Its output is deterministic, market-data-only, and not investment advice.
 
 `get_token_onchain_data` uses Helius DAS `getAsset`: a `POST` JSON-RPC request to `https://mainnet.helius-rpc.com/?api-key=HELIUS_API_KEY` with the token mint as `params.id`. It provides factual onchain data only and is not investment advice.
+
+`get_token_holders` uses Helius DAS `getTokenAccounts` via `POST` to the same endpoint and reuses `getAsset` for the mint's supply and decimals. It accepts a required `tokenAddress` and optional `limit`; limits are clamped to 1–1,000 (default 100). Raw account amounts are converted to UI amounts using the mint decimals, and percentages are calculated against total supply; percentages remain `null` when supply or decimals are unavailable. Results represent token accounts, not unique people or entities.
 
 ## Scripts
 
