@@ -23,6 +23,15 @@ export async function assessTokenRisk(
     tokenAccountsService.getTokenAccounts({ tokenAddress }),
   ]);
 
+  return computeRiskSignals(tokenAddress, authorityResult, tokenAccountsResult);
+}
+
+export function computeRiskSignals(
+  tokenAddress: string,
+  authorityResult: HeliusServiceResult,
+  tokenAccountsResult: HeliusTokenAccountsResult,
+): TokenRiskResult {
+
   if (!authorityResult.ok && !tokenAccountsResult.ok) {
     if (failureReason(authorityResult) === failureReason(tokenAccountsResult)) return authorityResult;
     return { ok: false, reason: "error", detail: "Risk observations could not be completed.", statusCode: null };

@@ -12,6 +12,7 @@ import { registerAssessTokenRiskTool } from "./mcp/assess-token-risk.js";
 import { registerScreenDiscoveryCandidatesTool } from "./mcp/screen-discovery-candidates.js";
 import { registerObservationTools } from "./mcp/observation.js";
 import { registerWalletActivityTool } from "./mcp/wallet-activity.js";
+import { registerInvestigateTokenTool } from "./mcp/investigate-token.js";
 import { DexScreenerService } from "./services/dexscreener.js";
 
 export function createServer(
@@ -44,6 +45,7 @@ export function createServer(
   registerScreenDiscoveryCandidatesTool(server);
   registerObservationTools(server);
   registerWalletActivityTool(server);
+  registerInvestigateTokenTool(server);
 
   return server;
 }
