@@ -67,7 +67,7 @@ Capture is explicit when the MCP tool is called. This stdio server has no backgr
 
 ## Token Investigation
 
-`investigate_token` orchestrates the existing DexScreener and Helius services. Market, identity, and token-account requests run in parallel; successful results populate the corresponding market, deterministic analysis, onchain, and risk sections, while independent failures are listed as limitations. Observation history is read-only during investigation. Status is `ok` when market data or Helius identity succeeds, `not_found` only when both specifically report not found, and `error` when all fetches fail otherwise—there is no separate partial status. The investigation report provides factual market and onchain intelligence. It does not provide investment recommendations or trading instructions.
+`investigate_token` orchestrates the existing DexScreener and Helius services. Market, identity, and token-account requests run in parallel; successful results populate the corresponding market, deterministic analysis, onchain, and risk sections, while independent failures are listed as limitations. Observation history is read-only during investigation. Status values are `ok` (all sections succeeded), `partial` (at least one section or observation read failed), `not_found` (both market and identity explicitly report not found), and `error` (both market and identity failed for other reasons). The `not_found` and `error` cases are checked before `partial` so genuine absence or total failure is not masked by degradation. The investigation report provides factual market and onchain intelligence. It does not provide investment recommendations or trading instructions.
 
 ## Scripts
 

@@ -13,7 +13,7 @@ export interface TokenObservationSummary extends Record<string, unknown> {
 
 export interface TokenInvestigationReport extends Record<string, unknown> {
   tokenAddress: string;
-  status: "ok" | "not_found" | "error";
+  status: "ok" | "partial" | "not_found" | "error";
   market: DexScreenerTokenData | null;
   analysis: TokenAnalysis | null;
   onchain: HeliusTokenData | null;

@@ -35,12 +35,20 @@ export async function investigateToken(
   if (!marketResult.ok) limitations.push(`Market data unavailable: ${marketResult.reason}.`);
   if (!identityResult.ok) limitations.push(`Onchain identity unavailable: ${identityResult.reason}.`);
   if (!accountsResult.ok) limitations.push(`Token-account data unavailable: ${accountsResult.reason}.`);
+  let observationReadFailed = false;
   let observation = { onWatchlist: false, addedAt: null as number | null, snapshotCount: 0, earliestSnapshotAt: null as number | null, latestSnapshotAt: null as number | null };
   try {
     const entry = repository.getWatchlistEntry(tokenAddress);
     const snapshots = repository.getSnapshots(tokenAddress);
     observation = { onWatchlist: entry !== null, addedAt: entry?.addedAt ?? null, snapshotCount: snapshots.length, earliestSnapshotAt: snapshots[0]?.capturedAt ?? null, latestSnapshotAt: snapshots.at(-1)?.capturedAt ?? null };
-  } catch { limitations.push("Observation history could not be read."); }
-  const status = marketResult.ok || identityResult.ok ? "ok" : marketResult.reason === "not_found" && identityResult.reason === "not_found" ? "not_found" : "error";
+  } catch { observationReadFailed = true; limitations.push("Observation history could not be read."); }
+  const bothNotFound = !marketResult.ok && !identityResult.ok && marketResult.reason === "not_found" && identityResult.reason === "not_found";
+  const status = bothNotFound
+    ? "not_found"
+    : market === null && analysis === null && onchain === null && risk === null
+      ? "error"
+      : !marketResult.ok || !identityResult.ok || !accountsResult.ok || observationReadFailed
+        ? "partial"
+        : "ok";
   return { tokenAddress, status, market, analysis, onchain, risk, observation, limitations };
 }
