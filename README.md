@@ -20,6 +20,8 @@ The server uses MCP's stdio transport; it is intended to be launched by an MCP-c
 
 To use the Helius-backed tool, provide `HELIUS_API_KEY` in the process environment before starting the server (for example, `export HELIUS_API_KEY=...`). The existing health, DexScreener, and deterministic analysis tools do not require this key.
 
+Observation data is stored locally with `better-sqlite3`. Set optional `ALPHA_HUNTER_DB_PATH` to override the default `data/alpha-hunter.sqlite`; database files are ignored by Git. `better-sqlite3` is mature and synchronous, while Node's `node:sqlite` remains experimental and has required runtime flags on some Node 22 releases.
+
 ## MCP tools
 
 | Tool | Input | Description |
@@ -32,6 +34,10 @@ To use the Helius-backed tool, provide `HELIUS_API_KEY` in the process environme
 | `discover_tokens` | Optional `sources` and `limit` | Returns a DexScreener Solana candidate seed list. |
 | `screen_discovery_candidates` | Optional `limit` | Enriches discovery candidates with market data, applies transparent filters, and returns deterministic ranked candidates. |
 | `assess_token_risk` | `tokenAddress: string` | Produces factual authority-status and token-account concentration observations; not a recommendation or score. |
+| `add_to_watchlist` | `tokenAddress: string`, optional `reason` | Adds a token idempotently to the local observation watchlist. |
+| `get_watchlist` | Optional `limit` | Lists watched tokens. |
+| `capture_token_snapshot` | `tokenAddress: string` | Stores a timestamped DexScreener market snapshot and auto-adds unwatched tokens. |
+| `compare_token_snapshots` | `tokenAddress: string`, optional snapshot IDs | Reports factual percentage deltas; omitted IDs compare earliest/latest and fewer than two snapshots is insufficient data. |
 
 `get_token_market_data` uses DexScreener's public `token-pairs/v1/solana/{tokenAddress}` endpoint. Requests time out after approximately 8 seconds. When multiple Solana pairs are returned, Alpha Hunter selects the pair with the highest USD liquidity; ties keep DexScreener's response order. The tool reports factual market data only and does not assess token safety or investment quality.
 
@@ -48,6 +54,12 @@ To use the Helius-backed tool, provide `HELIUS_API_KEY` in the process environme
 Screening thresholds are configurable in `src/config/discoveryThresholds.ts`: minimum liquidity is `$1,000`, minimum 24-hour volume is `$1,000`, and maximum pair age is 7 days. A missing field is not treated as a failed criterion. Ranking is auditable and non-composite: newest pair first, then liquidity descending, then 24-hour volume descending, with token address as a stable tie-breaker. Each result includes factual `reasons` tags. This is not investment advice; candidates are not recommendations.
 
 `assess_token_risk` combines existing Helius authority data and token-account concentration data into deterministic factual observations. It reports authority status and the percentage of total supply represented by returned token accounts in the top 10, using `TOP10_CONCENTRATION_WARNING_PCT = 50` as an observation threshold. It does not produce a numeric score, verdict, creator or wallet history, bundle detection, or investment advice; those capabilities are deferred.
+
+## Observation Engine v0.1
+
+The Observation Engine records factual historical data for research. It does not predict future performance or provide trading recommendations. The local schema contains `watchlist_entries` (primary key `token_address`) and `token_snapshots` (foreign-keyed to the watchlist); an index on `(token_address, captured_at)` keeps per-token history queries efficient. Repeated watchlist adds preserve the original timestamp and reason. Snapshot capture stores only normalized DexScreener fields and returns typed provider failures without writing a row.
+
+Capture is explicit when the MCP tool is called. This stdio server has no background scheduler; automated interval capture is deferred to a future external cron/timer mechanism.
 
 ## Scripts
 

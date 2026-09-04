@@ -9,6 +9,8 @@ node_modules/
 # Build output and coverage
 dist/
 build/
+data/*.sqlite
+data/*.sqlite-*
 coverage/
 *.tsbuildinfo
 
