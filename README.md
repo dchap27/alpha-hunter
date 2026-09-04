@@ -38,6 +38,7 @@ Observation data is stored locally with `better-sqlite3`. Set optional `ALPHA_HU
 | `get_watchlist` | Optional `limit` | Lists watched tokens. |
 | `capture_token_snapshot` | `tokenAddress: string` | Stores a timestamped DexScreener market snapshot and auto-adds unwatched tokens. |
 | `compare_token_snapshots` | `tokenAddress: string`, optional snapshot IDs | Reports factual percentage deltas; omitted IDs compare earliest/latest and fewer than two snapshots is insufficient data. |
+| `get_wallet_activity` | `walletAddress: string`, optional `limit` | Retrieves normalized factual Solana transfer activity from Helius. |
 
 `get_token_market_data` uses DexScreener's public `token-pairs/v1/solana/{tokenAddress}` endpoint. Requests time out after approximately 8 seconds. When multiple Solana pairs are returned, Alpha Hunter selects the pair with the highest USD liquidity; ties keep DexScreener's response order. The tool reports factual market data only and does not assess token safety or investment quality.
 
@@ -60,6 +61,8 @@ Screening thresholds are configurable in `src/config/discoveryThresholds.ts`: mi
 The Observation Engine records factual historical data for research. It does not predict future performance or provide trading recommendations. The local schema contains `watchlist_entries` (primary key `token_address`) and `token_snapshots` (foreign-keyed to the watchlist); an index on `(token_address, captured_at)` keeps per-token history queries efficient. Repeated watchlist adds preserve the original timestamp and reason. Snapshot capture stores only normalized DexScreener fields and returns typed provider failures without writing a row.
 
 Capture is explicit when the MCP tool is called. This stdio server has no background scheduler; automated interval capture is deferred to a future external cron/timer mechanism.
+
+`get_wallet_activity` uses Helius's `getTransfersByAddress` JSON-RPC method (`POST` to `https://mainnet.helius-rpc.com/?api-key=HELIUS_API_KEY`) with positional parameters `[walletAddress, { limit }]`. It was chosen over `getTransactionsForAddress` because Helius returns parsed transfer objects, avoiding custom transaction parsing; the deprecated Enhanced Transactions API is not used. The method requires a Helius Developer plan or higher and costs 10 credits per request; an unsupported plan may return an authorization error. Provider `type` values are passed through exactly, with no inferred swap or trade semantics. The default activity limit is 50 and the maximum is 100, matching Helius's documented range. Wallet activity data does not by itself establish wallet profitability, intelligence, or future trading success.
 
 ## Scripts
 
