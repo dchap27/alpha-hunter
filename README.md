@@ -30,6 +30,7 @@ To use the Helius-backed tool, provide `HELIUS_API_KEY` in the process environme
 | `get_token_onchain_data` | `tokenAddress: string` | Retrieves normalized factual Solana asset identity, metadata, mint, and authority data from Helius. |
 | `get_token_holders` | `tokenAddress: string`, optional `limit` | Retrieves factual token-account balances from Helius. |
 | `discover_tokens` | Optional `sources` and `limit` | Returns a DexScreener Solana candidate seed list. |
+| `assess_token_risk` | `tokenAddress: string` | Produces factual authority-status and token-account concentration observations; not a recommendation or score. |
 
 `get_token_market_data` uses DexScreener's public `token-pairs/v1/solana/{tokenAddress}` endpoint. Requests time out after approximately 8 seconds. When multiple Solana pairs are returned, Alpha Hunter selects the pair with the highest USD liquidity; ties keep DexScreener's response order. The tool reports factual market data only and does not assess token safety or investment quality.
 
@@ -40,6 +41,8 @@ To use the Helius-backed tool, provide `HELIUS_API_KEY` in the process environme
 `get_token_holders` uses Helius DAS `getTokenAccounts` via `POST` to the same endpoint and reuses `getAsset` for the mint's supply and decimals. It accepts a required `tokenAddress` and optional `limit`; limits are clamped to 1–1,000 (default 100). Raw account amounts are converted to UI amounts using the mint decimals, and percentages are calculated against total supply; percentages remain `null` when supply or decimals are unavailable. Results represent token accounts, not unique people or entities.
 
 `discover_tokens` queries DexScreener's `GET /token-profiles/latest/v1`, `GET /token-boosts/latest/v1`, and `GET /token-boosts/top/v1` endpoints (each documented at a 60 requests/minute rate limit). It filters to Solana, deduplicates by token address, labels each candidate by source, and merges boost values. This is a candidate seed list from self-submitted profiles and paid boosts—not trending or volume-ranked discovery. True trending/new-pair discovery is deferred to a future Birdeye or Solana RPC integration.
+
+`assess_token_risk` combines existing Helius authority data and token-account concentration data into deterministic factual observations. It reports authority status and the percentage of total supply represented by returned token accounts in the top 10, using `TOP10_CONCENTRATION_WARNING_PCT = 50` as an observation threshold. It does not produce a numeric score, verdict, creator or wallet history, bundle detection, or investment advice; those capabilities are deferred.
 
 ## Scripts
 

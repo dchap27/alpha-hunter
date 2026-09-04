@@ -8,6 +8,7 @@ import { registerTokenMarketDataTool } from "./mcp/token-market-data.js";
 import { registerTokenOnchainDataTool } from "./mcp/token-onchain-data.js";
 import { registerTokenHoldersTool } from "./mcp/token-holders.js";
 import { registerDiscoverTokensTool } from "./mcp/discover-tokens.js";
+import { registerAssessTokenRiskTool } from "./mcp/assess-token-risk.js";
 import { DexScreenerService } from "./services/dexscreener.js";
 
 export function createServer(
@@ -36,6 +37,7 @@ export function createServer(
   registerTokenOnchainDataTool(server);
   registerTokenHoldersTool(server);
   registerDiscoverTokensTool(server);
+  registerAssessTokenRiskTool(server);
 
   return server;
 }
