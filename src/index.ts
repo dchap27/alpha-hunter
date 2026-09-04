@@ -13,6 +13,7 @@ import { registerScreenDiscoveryCandidatesTool } from "./mcp/screen-discovery-ca
 import { registerObservationTools } from "./mcp/observation.js";
 import { registerWalletActivityTool } from "./mcp/wallet-activity.js";
 import { registerInvestigateTokenTool } from "./mcp/investigate-token.js";
+import { registerResearchQueueTools } from "./mcp/research-queue.js";
 import { DexScreenerService } from "./services/dexscreener.js";
 
 export function createServer(
@@ -46,6 +47,7 @@ export function createServer(
   registerObservationTools(server);
   registerWalletActivityTool(server);
   registerInvestigateTokenTool(server);
+  registerResearchQueueTools(server);
 
   return server;
 }

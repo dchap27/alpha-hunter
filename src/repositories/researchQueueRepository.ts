@@ -1,0 +1,13 @@
+import type Database from "better-sqlite3";
+import type { ResearchPriority, ResearchQueueEntry, WorkflowStatus } from "../types/research-queue.js";
+
+export class ResearchQueueRepository {
+  constructor(readonly db: Database.Database) {
+    db.exec(`CREATE TABLE IF NOT EXISTS research_queue (token_address TEXT PRIMARY KEY, status TEXT NOT NULL CHECK (status IN ('DISCOVERED','SCREENED','INVESTIGATED','WATCHING','ARCHIVED')), priority TEXT NOT NULL CHECK (priority IN ('LOW','MEDIUM','HIGH')), reason TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL); CREATE INDEX IF NOT EXISTS idx_research_queue_status_priority ON research_queue(status, priority);`);
+  }
+  add(tokenAddress: string, status: WorkflowStatus, priority: ResearchPriority, reason: string | null, now = Date.now()): ResearchQueueEntry { this.db.prepare("INSERT OR IGNORE INTO research_queue (token_address,status,priority,reason,created_at,updated_at) VALUES (?,?,?,?,?,?)").run(tokenAddress,status,priority,reason,now,now); return this.get(tokenAddress)!; }
+  get(tokenAddress: string): ResearchQueueEntry | null { return (this.db.prepare("SELECT token_address tokenAddress,status,priority,reason,created_at createdAt,updated_at updatedAt FROM research_queue WHERE token_address=?").get(tokenAddress) as ResearchQueueEntry | undefined) ?? null; }
+  updateStatus(tokenAddress: string, status: WorkflowStatus, now = Date.now()): ResearchQueueEntry | null { const result = this.db.prepare("UPDATE research_queue SET status=?, updated_at=? WHERE token_address=?").run(status, now, tokenAddress); return result.changes ? this.get(tokenAddress) : null; }
+  updatePriority(tokenAddress: string, priority: ResearchPriority, now = Date.now()): ResearchQueueEntry | null { const result = this.db.prepare("UPDATE research_queue SET priority=?, updated_at=? WHERE token_address=?").run(priority, now, tokenAddress); return result.changes ? this.get(tokenAddress) : null; }
+  list(status?: WorkflowStatus, priority?: ResearchPriority, limit = 100): ResearchQueueEntry[] { let sql = "SELECT token_address tokenAddress,status,priority,reason,created_at createdAt,updated_at updatedAt FROM research_queue"; const where: string[] = []; const params: unknown[] = []; if (status) { where.push("status=?"); params.push(status); } if (priority) { where.push("priority=?"); params.push(priority); } if (where.length) sql += ` WHERE ${where.join(" AND ")}`; sql += " ORDER BY CASE WHEN priority='HIGH' THEN 0 WHEN priority='MEDIUM' THEN 1 ELSE 2 END, updated_at DESC LIMIT ?"; params.push(limit); return this.db.prepare(sql).all(...params) as ResearchQueueEntry[]; }
+}
