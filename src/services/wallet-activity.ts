@@ -62,8 +62,14 @@ export class WalletActivityService {
     if (isRecord(body.error)) return { ok: false, reason: "api_error", detail: "Helius returned an API error.", statusCode: null };
     if (!isRecord(body.result) || !Array.isArray(body.result.data)) return { ok: false, reason: "malformed_response", detail: "Helius returned an unexpected wallet activity response.", statusCode: null };
     const activities = body.result.data.flatMap((entry): WalletActivityItem[] => { const item = normalizeActivity(entry, walletAddress.trim()); return item ? [item] : []; });
+    const groups = new Map<string, WalletActivityItem[]>();
+    for (const item of activities) {
+      const group = groups.get(item.signature);
+      if (group) group.push(item); else groups.set(item.signature, [item]);
+    }
+    const transactionGroups = [...groups].map(([signature, groupedActivities]) => ({ signature, activityCount: groupedActivities.length, activities: groupedActivities }));
     const pagination = asString(body.result.paginationToken);
-    const data: WalletActivityData = { walletAddress: walletAddress.trim(), activities, pagination: { token: pagination }, limitations: ["Transfer types are passed through from Helius; no swap or trade semantics are inferred.", "Wallet activity data does not by itself establish wallet profitability, intelligence, or future trading success."] };
+    const data: WalletActivityData = { walletAddress: walletAddress.trim(), activities, transactionGroups, pagination: { token: pagination }, limitations: ["Transfer types are passed through from Helius; no swap or trade semantics are inferred.", "Transaction groups are structural buckets by signature only; no swap or trade semantics are inferred.", "Wallet activity data does not by itself establish wallet profitability, intelligence, or future trading success."] };
     return { ok: true, data };
   }
 }

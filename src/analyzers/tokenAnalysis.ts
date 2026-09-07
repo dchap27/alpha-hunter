@@ -1,4 +1,4 @@
-import { HIGH_VOLUME_TO_LIQUIDITY_RATIO } from "../config/analysisThresholds.js";
+import { BONDING_CURVE_DEX_IDS, HIGH_VOLUME_TO_LIQUIDITY_RATIO } from "../config/analysisThresholds.js";
 import type { DexScreenerServiceResult, DexScreenerTokenData } from "../types/token-market-data.js";
 import type {
   AnalysisSignal,
@@ -40,6 +40,9 @@ export function generateAnalysisSignals(
       severity: "warning",
       message: "Liquidity data is unavailable.",
     });
+    if (token.dexId !== null && (BONDING_CURVE_DEX_IDS as readonly string[]).includes(token.dexId)) {
+      signals.push({ type: "possible_bonding_curve_stage", severity: "info", message: "This pair's liquidity is unavailable and its dexId matches a known pre-migration venue; the token may still be in an early bonding-curve stage without a tracked liquidity pool." });
+    }
   }
 
   if (token.marketCap === null) {

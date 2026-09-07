@@ -9,7 +9,7 @@ const activity = (overrides: Record<string, unknown> = {}) => ({ signature: "sig
 
 test("normalizes transfers, direction, edge cases, and positional params", async () => {
   let request: RequestInit | undefined;
-  const service = new WalletActivityService(async (_input, init) => { request = init; return response({ result: { data: [activity(), activity({ signature: "mint", type: "mint", fromUserAccount: null }), activity({ signature: "burn", type: "burn", toUserAccount: null, fromUserAccount: wallet })], paginationToken: "next" } }); }, "key");
+  const service = new WalletActivityService(async (_input, init) => { request = init; return response({ result: { data: [activity(), activity({ signature: "sig", type: "mint", fromUserAccount: null }), activity({ signature: "burn", type: "burn", toUserAccount: null, fromUserAccount: wallet })], paginationToken: "next" } }); }, "key");
   const result = await service.getWalletActivity(wallet, 7);
   assert.ok(result.ok);
   assert.equal(result.data.activities[0]?.direction, "in");
@@ -19,6 +19,8 @@ test("normalizes transfers, direction, edge cases, and positional params", async
   assert.equal(result.data.activities[2]?.direction, "out");
   assert.equal(result.data.activities[2]?.counterparty, null);
   assert.equal(result.data.pagination.token, "next");
+  assert.deepEqual(result.data.transactionGroups.map((group) => [group.signature, group.activityCount]), [["sig", 2], ["burn", 1]]);
+  assert.equal(result.data.transactionGroups[0]?.activities[0]?.signature, result.data.activities[0]?.signature);
   assert.deepEqual(JSON.parse(String(request?.body)).params, [wallet, { limit: 7 }]);
 });
 

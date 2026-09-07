@@ -154,6 +154,15 @@ test("generates factual availability and ratio signals", () => {
   );
 });
 
+test("adds bonding-curve stage signal only for confirmed pumpfun venue", () => {
+  const pumpfun = analyzeDexScreenerResult(successfulResult(createToken({ dexId: "pumpfun", liquidityUsd: null })));
+  assert.ok(pumpfun.ok);
+  assert.deepEqual(pumpfun.data.signals.map((signal) => signal.type).filter((type) => type.includes("liquidity") || type.includes("bonding")), ["liquidity_unavailable", "possible_bonding_curve_stage"]);
+  const raydium = analyzeDexScreenerResult(successfulResult(createToken({ dexId: "raydium", liquidityUsd: null })));
+  assert.ok(raydium.ok);
+  assert.equal(raydium.data.signals.some((signal) => signal.type === "possible_bonding_curve_stage"), false);
+});
+
 test("signals high activity relative to liquidity above the configured threshold", () => {
   const signals = generateAnalysisSignals(createToken(), {
     liquidityToMarketCap: 0.25,

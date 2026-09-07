@@ -15,6 +15,7 @@ export interface WalletActivityItem extends Record<string, unknown> {
 export interface WalletActivityData extends Record<string, unknown> {
   walletAddress: string;
   activities: WalletActivityItem[];
+  transactionGroups: Array<{ signature: string; activityCount: number; activities: WalletActivityItem[] }>;
   pagination: { token: string | null };
   limitations: string[];
 }

@@ -48,7 +48,7 @@ Observation data is stored locally with `better-sqlite3`. Set optional `ALPHA_HU
 
 `get_token_market_data` uses DexScreener's public `token-pairs/v1/solana/{tokenAddress}` endpoint. Requests time out after approximately 8 seconds. When multiple Solana pairs are returned, Alpha Hunter selects the pair with the highest USD liquidity; ties keep DexScreener's response order. The tool reports factual market data only and does not assess token safety or investment quality.
 
-`analyze_token` uses the same normalized DexScreener data and does not call an AI model or another provider. Its output is deterministic, market-data-only, and not investment advice.
+`analyze_token` uses the same normalized DexScreener data and does not call an AI model or another provider. When liquidity is unavailable and the representative `dexId` is the confirmed `pumpfun` venue, it adds a factual possible bonding-curve-stage observation; this evidence-scoped signal is not emitted for other venues. Its output is deterministic, market-data-only, and not investment advice.
 
 `get_token_onchain_data` uses Helius DAS `getAsset`: a `POST` JSON-RPC request to `https://mainnet.helius-rpc.com/?api-key=HELIUS_API_KEY` with the token mint as `params.id`. It provides factual onchain data only and is not investment advice.
 
@@ -60,7 +60,7 @@ Observation data is stored locally with `better-sqlite3`. Set optional `ALPHA_HU
 
 Screening thresholds are configurable in `src/config/discoveryThresholds.ts`: minimum liquidity is `$1,000`, minimum 24-hour volume is `$1,000`, and maximum pair age is 7 days. A missing field is not treated as a failed criterion. Ranking is auditable and non-composite: newest pair first, then liquidity descending, then 24-hour volume descending, with token address as a stable tie-breaker. Each result includes factual `reasons` tags. This is not investment advice; candidates are not recommendations.
 
-`assess_token_risk` combines existing Helius authority data and token-account concentration data into deterministic factual observations. It reports authority status and the percentage of total supply represented by returned token accounts in the top 10, using `TOP10_CONCENTRATION_WARNING_PCT = 50` as an observation threshold. It does not produce a numeric score, verdict, creator or wallet history, bundle detection, or investment advice; those capabilities are deferred.
+`assess_token_risk` combines existing Helius authority data and token-account concentration data into deterministic factual observations. It reports authority status and the percentage of total supply represented by returned token accounts in the top 10, using `TOP10_CONCENTRATION_WARNING_PCT = 50` as an observation threshold. When pair information is available, it also identifies when the token's own liquidity-pool address appears among returned token accounts, distinguishing that fact from private-wallet concentration. This is not a safety verdict, numeric score, creator or wallet history, bundle detection, or investment advice.
 
 ## Observation Engine v0.1
 
