@@ -30,6 +30,7 @@ export function computeRiskSignals(
   tokenAddress: string,
   authorityResult: HeliusServiceResult,
   tokenAccountsResult: HeliusTokenAccountsResult,
+  pairAddress?: string | null,
 ): TokenRiskResult {
 
   if (!authorityResult.ok && !tokenAccountsResult.ok) {
@@ -69,6 +70,19 @@ export function computeRiskSignals(
     top10Percentage: tokenAccountsResult.ok ? tokenAccountsResult.data.summary.top10ReturnedAccountsPercentage : null,
     largestTokenAccountPercentage: tokenAccountsResult.ok ? tokenAccountsResult.data.summary.largestReturnedAccountPercentage : null,
   };
+  if (pairAddress && tokenAccountsResult.ok) {
+    const match = tokenAccountsResult.data.accounts.find((account) => account.ownerAddress === pairAddress);
+    if (match) {
+      const percentage = match.amountPercentageOfSupply;
+      signals.push({
+        type: "pool_address_among_holders",
+        severity: "info",
+        message: percentage === null
+          ? "The token's own liquidity pool address is among the returned token accounts."
+          : `The token's own liquidity pool address is among the returned token accounts, holding ${percentage}% of total supply.`,
+      });
+    }
+  }
   if (tokenAccountsResult.ok) {
     limitations.push(...tokenAccountsResult.data.limitations);
     if (concentration.top10Percentage === null) {

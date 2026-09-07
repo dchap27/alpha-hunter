@@ -44,6 +44,14 @@ test("reports partial when observation history cannot be read", async () => {
   assert.ok(report.limitations.includes("Observation history could not be read."));
 });
 
+test("identifies a matching liquidity-pool address in investigation risk signals", async () => {
+  const pairAccount = { tokenAccountAddress: "account", mint: address, ownerAddress: "pair", amount: 600, decimals: 6, amountUi: 600, delegatedAmount: null, frozen: null, burnt: null, amountPercentageOfSupply: 60 };
+  const accountResult: HeliusTokenAccountsResult = { ok: true, data: { ...accounts.data, accounts: [pairAccount], summary: { ...accounts.data.summary, top10ReturnedAccountsPercentage: 60 } } };
+  const report = await investigateToken(address, { getTokenMarketData: async () => ({ ok: true, data: market }) }, { getTokenOnchainData: async () => identity }, { getTokenAccounts: async () => accountResult }, repo());
+  assert.ok(report.risk);
+  assert.ok(report.risk.signals.some((signal) => signal.type === "pool_address_among_holders"));
+});
+
 test("reports error when every section is unavailable", async () => {
   const failedAccounts: HeliusTokenAccountsResult = { ok: false, reason: "network_error", detail: "down", statusCode: null };
   const report = await investigateToken(address, { getTokenMarketData: async () => failure("network_error") }, { getTokenOnchainData: async () => ({ ok: false, reason: "api_error", detail: "failed", statusCode: null }) }, { getTokenAccounts: async () => failedAccounts }, repo());

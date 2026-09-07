@@ -4,18 +4,19 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { CallToolResultSchema, type CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { assessTokenRisk } from "../src/analyzers/tokenRisk.js";
+import { assessTokenRisk, computeRiskSignals } from "../src/analyzers/tokenRisk.js";
 import { registerAssessTokenRiskTool } from "../src/mcp/assess-token-risk.js";
 import type { HeliusServiceResult } from "../src/types/helius.js";
 import type { HeliusTokenAccountsResult } from "../src/types/helius-token-accounts.js";
+import type { HeliusTokenAccount } from "../src/types/helius-token-accounts.js";
 
 const address = "Mint111111111111111111111111111111111111111";
 const authorityData = (mint: string | null, mintKnown = true, freeze: string | null = null, freezeKnown = true): HeliusServiceResult => ({ ok: true, data: {
   tokenAddress: address, name: null, symbol: null, tokenStandard: null, decimals: 6, supply: 1_000_000, image: null, metadataUri: null, creators: [], authorities: [], assetInterface: null, tokenProgram: null,
   mintAuthority: mint, mintAuthorityKnown: mintKnown, freezeAuthority: freeze, freezeAuthorityKnown: freezeKnown,
 } });
-const tokenAccountsData = (top10: number | null): HeliusTokenAccountsResult => ({ ok: true, data: {
-  tokenAddress: address, owner: null, totalSupplyUi: 1_000_000, decimals: 6, limit: 100, cursor: null, lastIndexedSlot: null, accounts: [],
+const tokenAccountsData = (top10: number | null, accounts: HeliusTokenAccount[] = []): HeliusTokenAccountsResult => ({ ok: true, data: {
+  tokenAddress: address, owner: null, totalSupplyUi: 1_000_000, decimals: 6, limit: 100, cursor: null, lastIndexedSlot: null, accounts,
   summary: { returnedAccountCount: 10, totalAccountsAvailable: 10, largestReturnedAccountPercentage: 10, top5ReturnedAccountsPercentage: 30, top10ReturnedAccountsPercentage: top10 },
   limitations: [],
 } });
@@ -75,6 +76,21 @@ test("reports unavailable concentration with a limitation", async () => {
   assert.ok(result.ok);
   assert.ok(result.data.signals.some((signal) => signal.type === "concentration_unknown"));
   assert.ok(result.data.limitations.some((item) => item.includes("Token-account concentration could not be assessed")));
+});
+
+test("adds a pool-address signal without replacing concentration signals", () => {
+  const pairAddress = "Pair111111111111111111111111111111111111111";
+  const accounts = [{ tokenAccountAddress: "account", mint: address, ownerAddress: pairAddress, amount: 600, decimals: 6, amountUi: 600, delegatedAmount: null, frozen: null, burnt: null, amountPercentageOfSupply: 60 }];
+  const result = computeRiskSignals(address, authorityData(null), tokenAccountsData(60, accounts), pairAddress);
+  assert.ok(result.ok);
+  assert.ok(result.data.signals.some((signal) => signal.type === "pool_address_among_holders" && signal.message.includes("60%")));
+  assert.ok(result.data.signals.some((signal) => signal.type === "top10_concentration_high"));
+});
+
+test("does not add a pool-address signal when the pair does not match", () => {
+  const result = computeRiskSignals(address, authorityData(null), tokenAccountsData(60, [{ tokenAccountAddress: "account", mint: address, ownerAddress: "Other1111111111111111111111111111111111111111", amount: 600, decimals: 6, amountUi: 600, delegatedAmount: null, frozen: null, burnt: null, amountPercentageOfSupply: 60 }]), "Pair111111111111111111111111111111111111111");
+  assert.ok(result.ok);
+  assert.equal(result.data.signals.some((signal) => signal.type === "pool_address_among_holders"), false);
 });
 
 test("handles matching and differing failures, and partial success", async () => {

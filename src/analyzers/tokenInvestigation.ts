@@ -30,7 +30,7 @@ export async function investigateToken(
   // computeRiskSignals degrades gracefully on its own — called unconditionally
   // with whatever identity/accounts results are available; partial failures
   // still produce partial signals, with the failing side noted in limitations.
-  const riskResult = computeRiskSignals(tokenAddress, identityResult, accountsResult);
+  const riskResult = computeRiskSignals(tokenAddress, identityResult, accountsResult, marketResult.ok ? marketResult.data.pairAddress : null);
   const risk = riskResult?.ok ? riskResult.data : null;
   if (!marketResult.ok) limitations.push(`Market data unavailable: ${marketResult.reason}.`);
   if (!identityResult.ok) limitations.push(`Onchain identity unavailable: ${identityResult.reason}.`);
